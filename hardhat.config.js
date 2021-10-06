@@ -53,7 +53,12 @@ task("sponsor-usdc", "Approve borrow by beneficiary")
 
     const someTx = await aaveVariableDebtTokenContract.approveDelegation(
       to, 
-      parseUnits(taskArgs.tokenqty, aTokenDecimals)
+      parseUnits(taskArgs.tokenqty, aTokenDecimals),
+      {
+        gasPrice: BigNumber.from(3).mul(
+          BigNumber.from(10).pow(BigNumber.from(9))
+        )
+      }
     );
 
     // to verify address use below
@@ -65,7 +70,7 @@ task("sponsor-usdc", "Approve borrow by beneficiary")
     //   IVariableDebtToken.abi,
     //   fromSigner
     // );
-
+    console.log(someTx)
     return someTx.wait();
   });
 
