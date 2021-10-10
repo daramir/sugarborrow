@@ -26,7 +26,10 @@ task("sponsor-usdc", "Approve borrow by beneficiary")
   .addParam("sponsor", "From address or account index")
   .addParam("beneficiary", "Address of user getting spoiled")
   // .addParam("tokenqty", "Quantity in (token specific) full decimals")
-  .addParam("tokenqty", "Token quantity in token units and decimals e.g. 13.12345")
+  .addParam(
+    "tokenqty",
+    "Token quantity in token units and decimals e.g. 13.12345"
+  )
   .setAction(async (taskArgs, { network, ethers }) => {
     const from = await addr(ethers, taskArgs.sponsor);
     console.log(`Normalized from address: ${from}`);
@@ -52,12 +55,12 @@ task("sponsor-usdc", "Approve borrow by beneficiary")
     const aTokenDecimals = usdcAaveReference.decimals;
 
     const someTx = await aaveVariableDebtTokenContract.approveDelegation(
-      to, 
+      to,
       parseUnits(taskArgs.tokenqty, aTokenDecimals),
       {
         gasPrice: BigNumber.from(3).mul(
           BigNumber.from(10).pow(BigNumber.from(9))
-        )
+        ),
       }
     );
 
@@ -70,7 +73,62 @@ task("sponsor-usdc", "Approve borrow by beneficiary")
     //   IVariableDebtToken.abi,
     //   fromSigner
     // );
-    console.log(someTx)
+    console.log(someTx);
+    return someTx.wait();
+  });
+
+task("borrow-usdc", "Beneficiary to borrow on behalaf of sponsor")
+  .addParam("sponsor", "From address or account index")
+  .addParam("beneficiary", "Address of user getting spoiled")
+  .addParam(
+    "tokenqty",
+    "Token quantity in token units and decimals e.g. 13.12345"
+  )
+  .setAction(async (taskArgs, { network, ethers }) => {
+    const from = await addr(ethers, taskArgs.beneficiary);
+    console.log(`Normalized from address: ${from}`);
+    const fromSigner = await ethers.provider.getSigner(from);
+
+    let sponsor;
+    if (taskArgs.sponsor) {
+      sponsor = await addr(ethers, taskArgs.sponsor);
+      console.log(`Normalized to address: ${sponsor}`);
+    }
+
+    const lendingPoolReference = contractReferencesAave.logic.find(
+      (elem) => elem.aaveContractName == "LendingPool"
+    );
+    const aaveLendingPoolContract = new ethers.Contract(
+      lendingPoolReference.aaveContractAddress,
+      LendingPoolV2Artifact.abi,
+      fromSigner
+    );
+
+    const usdcAaveReference = contractReferencesAave.proto.find(
+      (elem) => elem.symbol == "USDC"
+    );
+    const aTokenDecimals = usdcAaveReference.decimals;
+
+    // Borrow the relevant amount
+    const addrAssetToBorrow = usdcAaveReference.address;
+    const amountToBorrowInWei = parseUnits(taskArgs.tokenqty, aTokenDecimals); // must be equal to or less than the amount delegated to the borrower
+    const uint256InterestRateMode = 2; // must be of the same type as the debt token that is delegated. I.e. stable = 1, variable = 2.
+    const uint16ReferralCode = 0;
+    const addrDelegatorAddress = sponsor;
+
+    const someTx = await aaveLendingPoolContract.borrow(
+      addrAssetToBorrow,
+      amountToBorrowInWei,
+      uint256InterestRateMode,
+      uint16ReferralCode,
+      addrDelegatorAddress
+      // , {
+      //   gasPrice: BigNumber.from(3).mul(
+      //     BigNumber.from(10).pow(BigNumber.from(9))
+      //   ),
+      // }
+    );
+
     return someTx.wait();
   });
 
