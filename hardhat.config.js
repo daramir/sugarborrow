@@ -24,8 +24,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
 task("sponsor-usdc", "Approve borrow by beneficiary")
   .addParam("sponsor", "From address or account index")
-  .addParam("beneficiary", "Address of user getting spoiled")
-  // .addParam("tokenqty", "Quantity in (token specific) full decimals")
+  .addParam("beneficiary", "Address (EOA or contract) of user getting spoiled")
   .addParam(
     "tokenqty",
     "Token quantity in token units and decimals e.g. 13.12345"
@@ -51,7 +50,6 @@ task("sponsor-usdc", "Approve borrow by beneficiary")
       fromSigner
     );
 
-    // const aTokenDecimals = await buyTokenContract.decimals();
     const aTokenDecimals = usdcAaveReference.decimals;
 
     const someTx = await aaveVariableDebtTokenContract.approveDelegation(
@@ -79,7 +77,7 @@ task("sponsor-usdc", "Approve borrow by beneficiary")
 
 task("borrow-usdc", "Beneficiary to borrow on behalaf of sponsor")
   .addParam("sponsor", "From address or account index")
-  .addParam("beneficiary", "Address of user getting spoiled")
+  .addParam("beneficiary", "Address (EOA) of user getting spoiled")
   .addParam(
     "tokenqty",
     "Token quantity in token units and decimals e.g. 13.12345"
@@ -128,6 +126,7 @@ task("borrow-usdc", "Beneficiary to borrow on behalaf of sponsor")
       //   ),
       // }
     );
+    console.log(someTx);
 
     return someTx.wait();
   });

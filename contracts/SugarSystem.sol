@@ -56,18 +56,19 @@ contract SugarSystem is Ownable {
     emit PurseRequested(msg.sender, _asset);
   }
 
-  function giftPurse(PurseRequest memory purseReq) external {
+  function giftPurse(PurseRequest memory purseReq) external returns (address) {
     for (uint256 index = 0; index < _purseRequests.length; index++) {
-      Purse memory search = _purseRequests[index];
+      PurseRequest memory search = _purseRequests[index];
       if (
         search.beneficiary == purseReq.beneficiary &&
         search.asset == purseReq.asset
       ) {
-        address gift = address(new Purse(beneficiary, asset));
+        address gift = address(new Purse(search.beneficiary, search.asset));
+        _ownedPurses[search.beneficiary].push(gift);
+        emit PurseGifted(gift, search.beneficiary , search.asset);
+
         delete _purseRequests[index];
 
-        _ownedPurses[beneficiary].push(gift);
-        emit PurseRequested(msg.sender, _asset);
         return gift;
       }
     }
